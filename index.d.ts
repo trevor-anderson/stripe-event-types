@@ -803,3 +803,28 @@ declare module "stripe" {
     }
   }
 }
+
+/**
+ * A map of every Stripe webhook event to its respective `event.data.object` type.
+ */
+export type StripeEventDataObjectMap = {
+  [EventType in Stripe.DiscriminatedEvent.Type]: GetDataObjectTypeForEvent<EventType>;
+};
+
+/**
+ * Generic util which takes a Stripe event name and returns the event's `event.data.object` type.
+ *
+ * @example
+ * ```ts
+ * GetDataObjectTypeForEvent<"account.updated">; //                  Stripe.Account
+ * GetDataObjectTypeForEvent<"customer.subscription.updated">; //    Stripe.Subscription
+ * GetDataObjectTypeForEvent<"account.external_account.created">; // Stripe.Card | Stripe.BankAccount
+ * ```
+ */
+export type GetDataObjectTypeForEvent<EventName extends Stripe.DiscriminatedEvent.Type> = ValueOf<{
+  [Obj in Stripe.DiscriminatedEvent as { type: EventName } extends Pick<Obj, "type">
+    ? EventName
+    : never]: Obj extends { data: { object: object } } ? Obj["data"]["object"] : never;
+}>;
+
+type ValueOf<Obj> = Obj[keyof Obj];
